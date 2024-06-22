@@ -62,7 +62,7 @@ def main():
     determine_intents: list = intent_clf.classify(jdata['message'])
     determine_named_entities: list = named_entity_clf.classify(jdata['message'])
 
-    # Сохранение в бд
+    # Сохранение в память приложения
     local_intents = Modules.LocalStorage()
     local_intents.save(postgres.select_data(table_name='Intents'))
     local_intents.save(data_transformer.add_prefix(prefix='INTENT_', data=local_intents.get_data()))
