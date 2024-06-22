@@ -1,0 +1,18 @@
+{
+  "message_id": "3872d839-c11d-448d-b8b6-7debad2a57ed",
+  "message": "Привет, меня зовут Иван и я живу в городе Москва!",
+  "extracted_entities": [
+    {
+      "PERSON_NAME": "ИВАН"
+    },
+    {
+      "LOCATION": "МОСКВА"
+    }
+  ],
+  "intents": [
+    "INTENT_GENERAL_QUIRKY"
+  ],
+  "answer": [
+    "Извините, мы не можем обработать ваш запрос"
+  ]
+}

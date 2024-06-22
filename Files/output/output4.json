@@ -1,0 +1,11 @@
+{
+  "message_id": "3872d839-c11d-448d-b8b6-7debad2a57ed",
+  "message": "Забронируй мне номер в отеле Сияние на 10 дней",
+  "extracted_entities": [],
+  "intents": [
+    "INTENT_RECOMMENDATION_LOCATIONS"
+  ],
+  "answer": [
+    "Извините, мы не можем обработать ваш запрос"
+  ]
+}

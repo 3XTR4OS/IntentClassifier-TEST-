@@ -1,0 +1,18 @@
+{
+  "message_id": "3872d839-c11d-448d-b8b6-7debad2a57ed",
+  "message": "Wake me up at 5 pm",
+  "extracted_entities": [
+    {
+      "DATE_TIME": "5"
+    },
+    {
+      "DATE_TIME": "PM"
+    }
+  ],
+  "intents": [
+    "INTENT_ALARM_SET"
+  ],
+  "answer": [
+    "Будильник успешно установлен!"
+  ]
+}

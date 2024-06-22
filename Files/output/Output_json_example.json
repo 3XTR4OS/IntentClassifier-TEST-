@@ -1,0 +1,7 @@
+{"message_id": "3872d839-c11d-448d-b8b6-7debad2a57ed", "message": "Сообщение пользователя",
+"extracted_entities":
+[{"type": "CITY",
+"value": "Владивосток"},
+{"type": "CURRENCY",
+"value": "5000 рублей"}],
+"intents": ["INTENT_GET_CURRENCY_RATE",.."OTHER_INTENT"], "answer": "Ответ"]}

@@ -1,108 +1,88 @@
 import json
 import pprint
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TextClassificationPipeline, pipeline
+
+import Logic.Intents as Intents
+import Logic.Named_Entities as Named_entitiesCLF
+import Logic.DataBase.PostgreSQL as PgDataBase
+import Logic.Modules as Modules
+import DataTransformer as DTransform
+from Trainee.Logic.Intents import IntentProcessor
 
 
-# Входные данные (json)
-def read_json(json_path):
-    with open(json_path, 'r', encoding='UTF-8') as file:
-        json_string = json.load(file)
+class JsonWorker:
+    def read_json(self, file_path) -> dict:
+        with open(file_path, 'r', encoding='UTF-8') as file:
+            data = json.load(file)
 
-        return json_string
-
-
-# Классификация интентов
-def intent_classificator(user_message):
-    model_name = 'qanastek/XLMRoberta-Alexa-Intents-Classification'
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    classifier = TextClassificationPipeline(model=model, tokenizer=tokenizer)
-
-    # response example: [{'label': 'alarm_set', 'score': 0.9998685121536255}]
-    response = classifier(user_message)
-
-    intent_classes = []
-    for elem in response:
-        intent_classes.append('INTENT_' + elem['label'].upper())
-
-    return intent_classes
+        return data
 
 
-# Выделение именованных сущностей
-def named_entity_classification(user_message):
-    # output example: [{'entity': 'Person_Name', 'score': 0.7019974, 'index': 4, 'word': 'Wolfgang', 'start': 11, 'end': 19},
-    # {'entity': 'location', 'score': 0.6971302, 'index': 9, 'word': 'Berlin', 'start': 34, 'end': 40}]
-    classifier = pipeline(task="token-classification",
-                          model="mdarhri00/named-entity-recognition")
 
-    response = classifier(user_message)
+class OutputConstructor:
+    def __init__(self,
+                 message_id: str,
+                 user_message: str,
+                 extracted_entities: list,
+                 classified_intents: list,
+                 answer):
+        self.message_id = message_id
+        self.message = user_message
+        self.extracted_entities = extracted_entities
+        self.classified_intents = classified_intents
+        self.answer = answer
 
-    named_entities = []
-    for elem in response:
-        entity = elem['entity'].upper()
-        value = elem['word'].upper()
-        named_entities.append({entity: value})
+    def get_json_output(self):
+        output_json = {
+            "message_id": self.message_id,
+            "message": self.message,
+            "extracted_entities": self.extracted_entities,
+            "intents": self.classified_intents,
+            "answer": self.answer}
 
-    return named_entities
+        return output_json
 
+    def save_into_json_file(self, path, filename):
+        received_json = self.get_json_output()
 
-# --------------- МОДУЛИ -------------------------
-def alarm_module():
-    # // Какая-то логика
-    return 'Будильник успешно установлен!'
-
-
-def hotel_module():
-    # // Какая-то логика
-    return 'Билеты забронированы!'
-
-
-def music_module():
-    # // Какая-то логика
-    return 'Играет приятная музыка'
+        with open(f'{path}//{filename}', 'w', encoding='utf-8') as file:
+            json.dump(received_json, file, ensure_ascii=False, indent=2)
 
 
-# ------------------------------------------------
+def main():
+    worker = JsonWorker()
+    intent_clf = Intents.IntentClassifier()
+    named_entity_clf = Named_entitiesCLF.NamedEntityClassifier()
+    data_transformer = DTransform.DataTransformer()  # Приводит данные к некоторому формату
+    postgres = PgDataBase.PostgresDB()
 
-# ОБРАБОТЧИК ИНТЕНТОВ
-def process_intent(intents: list):
-    intents_modules = {
-        'INTENT_ALARM_SET': alarm_module,
-        'INTENT_BOOK_HOTEL': hotel_module,
-        'INTENT_PLAY_MUSIC': music_module
-    }
+    # Структура jdata: {message_id: str, message: str}
+    jdata: dict = worker.read_json('Files/Input/Example_json1.json')
 
-    processed_intents = []
+    # Определение интентов и именованных сущностей
+    determine_intents: list = intent_clf.classify(jdata['message'])
+    determine_named_entities: list = named_entity_clf.classify(jdata['message'])
 
-    for intent in intents:
-        can_work_with_intent = intent in intents_modules
+    # Сохранение в бд
+    local_intents = Modules.LocalStorage()
+    local_intents.save(postgres.select_data(table_name='Intents'))
+    local_intents.save(data_transformer.add_prefix(prefix='INTENT_', data=local_intents.get_data()))
 
-        if not can_work_with_intent:
-            processed_intents.append('Извините, мы не можем обработать ваш запрос')
-        else:
-            # Вызов функции
-            intent_module = intents_modules[intent]
-            processed_intents.append(intent_module())
+    # Передаём выгруженные данные из БД данные
+    intent_proc = IntentProcessor(local_intents.get_data())
 
-    return processed_intents
+    processed_answer = intent_proc.process_intents(user_message=jdata['message'], entities=determine_named_entities,
+                                                   intents=determine_intents)
+
+    output = OutputConstructor(
+        message_id=jdata['messageId'],
+        user_message=jdata['message'],
+        extracted_entities=determine_named_entities,
+        classified_intents=determine_intents,
+        answer=processed_answer)
+
+    pprint.pprint(output.get_json_output())
+    output.save_into_json_file(path='Files/output', filename='main_test.json')
 
 
 if __name__ == '__main__':
-    for i in range(1, 5):
-        data = read_json(f'Files/Example_json{i}.json')
-        classified_intents = intent_classificator(data['message'])
-        entities = named_entity_classification(data['message'])
-        answer = process_intent(classified_intents)
-
-        output_json = {
-            "message_id": data['messageId'],
-            "message": data['message'],
-            "extracted_entities": entities,
-            "intents": classified_intents,
-            "answer": answer
-        }
-
-        with open(f'output{i}.json', 'w', encoding='utf-8') as file:
-            json.dump(output_json, file, ensure_ascii=False, indent=2)
-
-        pprint.pprint(output_json)
+    main()

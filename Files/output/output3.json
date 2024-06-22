@@ -1,0 +1,36 @@
+{
+  "message_id": "3872d839-c11d-448d-b8b6-7debad2a57ed",
+  "message": "Я люблю группу Twenty-One-Pilots. Включи трек Heathens",
+  "extracted_entities": [
+    {
+      "ORGANIZATION_NAME": "TWENTY"
+    },
+    {
+      "ORGANIZATION_NAME": "-"
+    },
+    {
+      "ORGANIZATION_NAME": "ONE"
+    },
+    {
+      "ORGANIZATION_NAME": "-"
+    },
+    {
+      "ORGANIZATION_NAME": "PILOT"
+    },
+    {
+      "ORGANIZATION_NAME": "##S"
+    },
+    {
+      "ORGANIZATION_NAME": "HEATH"
+    },
+    {
+      "ORGANIZATION_NAME": "##ENS"
+    }
+  ],
+  "intents": [
+    "INTENT_MUSIC_LIKENESS"
+  ],
+  "answer": [
+    "Извините, мы не можем обработать ваш запрос"
+  ]
+}
